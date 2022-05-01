@@ -8,6 +8,9 @@ const storeItems = new Map([
     [1, {price: 100, name: "paypal one"}],
     [2, {price: 200, name: "paypal two"}]
 ])
+//create paypal enviroment
+const environment = new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID,process.env.PAYPAL_CLIENT_SECRET);
+const paypalClient = new paypal.core.PayPalHttpClient(environment);
 
 app.set('view engine','ejs');
 app.use(express.static('public'));
@@ -17,11 +20,11 @@ app.get('/', (req,res) => {
 });
 
 //post
-app.post('/create-order', (req,res) => {
+app.post('/create-order', async (req,res) => {
     const request = new paypal.orders.OrdersCreateRequest();
     const total = req.body.items.reduce((sum, item) => {
-        return sum + storeItems.get(item.id).price * quantity;
-    })
+        return sum + storeItems.get(item.id).price * item.quantity;
+    }, 0)
     request.requestBody({
         intent: 'CAPTURE',
         purchase_units:[
@@ -36,7 +39,7 @@ app.post('/create-order', (req,res) => {
                         }
                     }
                 },
-                items: req.body.items.Map(item => {
+                items: req.body.items.map(item => {
                     const storeItem = storeItems.get(item.id)
                     return {
                         name: storeItem.name,
@@ -50,6 +53,12 @@ app.post('/create-order', (req,res) => {
             }
         ]
     })
+    try{
+        const order = await paypalClient.execute(request);
+        res.json({id: order.result.id});
+    }catch(e){
+        res.status(500).json( {error: e.message});
+    }
 })
 
 app.listen(3000);
