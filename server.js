@@ -1,12 +1,19 @@
+require('dotenv').config();
 const express = require('express');
-
 const app = express();
+
+const storeItems = new Map([
+    [1, {price: 100, name: "paypal one"}],
+    [2, {price: 200, name: "paypal two"}]
+])
 
 app.set('view engine','ejs');
 app.use(express.static('public'));
+app.use(express.json());
 app.get('/', (req,res) => {
-    res.render('index', { paypalClientId: 'AcokJ8myoxySarlI-fFQStDddMc9Kkc7qxN0aSTBQ5xzs08FAzd_ZhoV_IKqncUyFrAAPB-vwA3tKY_o'})
+    res.render('index', { paypalClientId: process.env.PAYPAL_CLIENT_ID});
 });
+
 
 
 app.listen(3000);
